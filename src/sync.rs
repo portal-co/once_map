@@ -661,6 +661,16 @@ impl<K, V, S: Default> Default for OnceMap<K, V, S> {
     }
 }
 
+impl<K: Clone + Eq + Hash, V: Clone, S: BuildHasher + Default> Clone for OnceMap<K, V, S> {
+    fn clone(&self) -> Self {
+        Self::from_iter(
+            self.read_only_view()
+                .iter()
+                .map(|(a, b)| (a.clone(), b.clone())),
+        )
+    }
+}
+
 impl<K, V, S> Extend<(K, V)> for OnceMap<K, V, S>
 where
     K: Eq + Hash,
@@ -917,12 +927,15 @@ where
         f.debug_map().entries(self.iter()).finish()
     }
 }
-
 pub struct LazyMap<K, V, S = crate::RandomState, F = fn(&K) -> V> {
     map: OnceMap<K, V, S>,
     init: F,
 }
-
+impl<K: Clone + Eq + Hash, V: Clone, S: BuildHasher + Default,F: Clone> Clone for LazyMap<K,V,S,F>{
+    fn clone(&self) -> Self {
+        Self { map: self.map.clone(), init: self.init.clone() }
+    }
+}
 impl<K, V, F> LazyMap<K, V, crate::RandomState, F> {
     pub fn new(f: F) -> Self {
         Self::with_hasher(crate::RandomState::new(), f)

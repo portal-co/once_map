@@ -14,7 +14,15 @@ pub struct OnceMap<K, V, S = crate::RandomState> {
     map: RefCell<HashMap<K, V>>,
     hash_builder: S,
 }
-
+impl<K: Eq + Hash + Clone,V: Clone,S: BuildHasher + Default> Clone for OnceMap<K,V,S>{
+    fn clone(&self) -> Self {
+        Self::from_iter(
+            self.read_only_view()
+                .iter()
+                .map(|(a, b)| (a.clone(), b.clone())),
+        )
+    }
+}
 impl<K, V> OnceMap<K, V> {
     /// Creates an empty `OnceMap`.
     pub fn new() -> Self {
@@ -485,6 +493,12 @@ where
 pub struct LazyMap<K, V, S = crate::RandomState, F = fn(&K) -> V> {
     map: OnceMap<K, V, S>,
     init: F,
+}
+
+impl<K: Clone + Eq + Hash, V: Clone, S: BuildHasher + Default,F: Clone> Clone for LazyMap<K,V,S,F>{
+    fn clone(&self) -> Self {
+        Self { map: self.map.clone(), init: self.init.clone() }
+    }
 }
 
 impl<K, V, F> LazyMap<K, V, crate::RandomState, F> {
